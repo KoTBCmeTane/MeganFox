@@ -43,3 +43,5 @@ app-example
 /android
 
 messenger-worker/.wrangler/
+
+messenger-worker/.wrangler/
