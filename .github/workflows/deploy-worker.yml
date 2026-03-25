@@ -1,0 +1,37 @@
+name: Deploy messenger-worker
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "messenger-worker/**"
+      - ".github/workflows/deploy-worker.yml"
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: messenger-worker/package-lock.json
+
+      - name: Install deps
+        working-directory: messenger-worker
+        run: npm ci
+
+      - name: Deploy to Cloudflare
+        working-directory: messenger-worker
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+

@@ -1,0 +1,13 @@
+name = "messenger-worker"
+main = "src/index.ts"
+compatibility_date = "2026-03-25"
+
+[durable_objects]
+bindings = [
+  { name = "ROOMS", class_name = "RoomsDO" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["RoomsDO"]
+
