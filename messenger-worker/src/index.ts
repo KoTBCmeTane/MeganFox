@@ -249,6 +249,11 @@ export class RoomsDO implements DurableObject {
         this.safeSend(serverSide, { type: "friends:accept:ok", fromUserId: fromId, ts: this.nowMs() });
         return;
       }
+
+      if (msg.type === "ping") {
+        this.safeSend(serverSide, { type: "pong", ts: this.nowMs(), echoTs: msg.ts ?? null });
+        return;
+      }
     });
 
     serverSide.addEventListener("close", () => {
@@ -314,6 +319,7 @@ const CallInvite = z.object({ type: z.literal("call:invite"), toUserId: z.string
 const CallAccept = z.object({ type: z.literal("call:accept"), toUserId: z.string().min(1), callId: z.string().min(1) });
 const CallReject = z.object({ type: z.literal("call:reject"), toUserId: z.string().min(1), callId: z.string().min(1) });
 const CallHangup = z.object({ type: z.literal("call:hangup"), toUserId: z.string().min(1), callId: z.string().min(1) });
+const Ping = z.object({ type: z.literal("ping"), ts: z.number().optional() });
 
 const Inbound = z.discriminatedUnion("type", [
   ClientHello,
@@ -327,5 +333,6 @@ const Inbound = z.discriminatedUnion("type", [
   CallAccept,
   CallReject,
   CallHangup,
+  Ping,
 ]);
 

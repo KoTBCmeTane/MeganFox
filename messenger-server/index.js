@@ -69,6 +69,11 @@ const CallHangup = z.object({
   callId: z.string().min(1),
 });
 
+const Ping = z.object({
+  type: z.literal('ping'),
+  ts: z.number().optional(),
+});
+
 const Inbound = z.discriminatedUnion('type', [
   ClientHello,
   Join,
@@ -81,6 +86,7 @@ const Inbound = z.discriminatedUnion('type', [
   CallAccept,
   CallReject,
   CallHangup,
+  Ping,
 ]);
 
 /** @type {Map<string, any>} */
@@ -342,6 +348,11 @@ wss.on('connection', (ws) => {
         });
       }
       safeSend(ws, { type: 'friends:accept:ok', fromUserId: msg.fromUserId, ts: nowMs() });
+      return;
+    }
+
+    if (msg.type === 'ping') {
+      safeSend(ws, { type: 'pong', ts: nowMs(), echoTs: msg.ts ?? null });
       return;
     }
   });

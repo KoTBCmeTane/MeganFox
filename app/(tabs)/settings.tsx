@@ -18,14 +18,24 @@ export default function SettingsScreen() {
   const { config, update: updateServer } = useServerConfig();
   const { status: wsStatus, error: wsError, debug } = useWs();
   const [wsDraft, setWsDraft] = useState(config.wsUrl);
+  const [fallbackWsDraft, setFallbackWsDraft] = useState(config.fallbackWsUrl);
 
   useEffect(() => {
     setWsDraft(config.wsUrl);
-  }, [config.wsUrl]);
+    setFallbackWsDraft(config.fallbackWsUrl);
+  }, [config.wsUrl, config.fallbackWsUrl]);
 
-  const wsDirty = useMemo(() => wsDraft.trim() !== config.wsUrl, [config.wsUrl, wsDraft]);
+  const wsDirty = useMemo(
+    () => wsDraft.trim() !== config.wsUrl || fallbackWsDraft.trim() !== config.fallbackWsUrl,
+    [config.wsUrl, config.fallbackWsUrl, wsDraft, fallbackWsDraft]
+  );
   const wsDraftTrim = useMemo(() => wsDraft.trim(), [wsDraft]);
+  const fallbackWsDraftTrim = useMemo(() => fallbackWsDraft.trim(), [fallbackWsDraft]);
   const wsLooksValid = useMemo(() => /^wss?:\/\/.+/i.test(wsDraftTrim), [wsDraftTrim]);
+  const fallbackLooksValid = useMemo(
+    () => !fallbackWsDraftTrim || /^wss?:\/\/.+/i.test(fallbackWsDraftTrim),
+    [fallbackWsDraftTrim]
+  );
 
   return (
     <SafeScreen style={styles.container}>
@@ -78,7 +88,7 @@ export default function SettingsScreen() {
         {wsError ? ` · ошибка: ${wsError === 'bad_ws_url' ? 'неверный адрес' : 'не удалось подключиться'}` : ''}
       </ThemedText>
       <ThemedText style={styles.muted}>
-        URL: {debug.url || '(пусто)'}
+        URL: {debug.url || '(пусто)'} {debug.activeUrlIndex === 1 ? '· резервный' : '· основной'}
         {debug.lastCloseCode !== null ? ` · close=${debug.lastCloseCode}` : ''}
         {debug.lastCloseReason ? ` · reason=${debug.lastCloseReason}` : ''}
       </ThemedText>
@@ -88,16 +98,24 @@ export default function SettingsScreen() {
         onChangeText={setWsDraft}
         autoCapitalize="none"
         autoCorrect={false}
-        placeholder="ws://192.168.1.50:8080"
+        placeholder="wss://messenger-worker.iroslav657.workers.dev/ws"
+      />
+      <ThemedText style={styles.muted}>Резервный WS адрес (авто-переключение)</ThemedText>
+      <ThemedTextInput
+        value={fallbackWsDraft}
+        onChangeText={setFallbackWsDraft}
+        autoCapitalize="none"
+        autoCorrect={false}
+        placeholder="wss://example.com/ws"
       />
       <Pressable
-        disabled={!wsDirty || !wsLooksValid}
-        onPress={() => updateServer({ wsUrl: wsDraftTrim })}
-        style={[styles.primaryBtn, (!wsDirty || !wsLooksValid) && styles.primaryBtnDisabled]}>
+        disabled={!wsDirty || !wsLooksValid || !fallbackLooksValid}
+        onPress={() => updateServer({ wsUrl: wsDraftTrim, fallbackWsUrl: fallbackWsDraftTrim })}
+        style={[styles.primaryBtn, (!wsDirty || !wsLooksValid || !fallbackLooksValid) && styles.primaryBtnDisabled]}>
         <ThemedText type="defaultSemiBold">Применить адрес</ThemedText>
       </Pressable>
-      {!wsLooksValid ? (
-        <ThemedText style={styles.muted}>Адрес должен начинаться с ws:// или wss://</ThemedText>
+      {!wsLooksValid || !fallbackLooksValid ? (
+        <ThemedText style={styles.muted}>Адреса должны начинаться с ws:// или wss://</ThemedText>
       ) : null}
 
       <ThemedText style={styles.muted}>{t('settings.displayName')}</ThemedText>

@@ -39,6 +39,7 @@ export function ServerConfigProvider({ children }: { children: React.ReactNode }
           ...prev,
           ...parsed,
           wsUrl: normalizeWsUrl(parsed.wsUrl) ?? prev.wsUrl,
+          fallbackWsUrl: normalizeWsUrl(parsed.fallbackWsUrl) ?? prev.fallbackWsUrl,
           userId: typeof parsed.userId === 'string' && parsed.userId ? parsed.userId : prev.userId,
           displayName: typeof parsed.displayName === 'string' && parsed.displayName ? parsed.displayName : prev.displayName,
         }));
@@ -61,6 +62,8 @@ export function ServerConfigProvider({ children }: { children: React.ReactNode }
       const next = { ...prev, ...patch };
       const normalized = normalizeWsUrl(next.wsUrl);
       if (normalized) next.wsUrl = normalized;
+      const normalizedFallback = normalizeWsUrl(next.fallbackWsUrl);
+      if (normalizedFallback) next.fallbackWsUrl = normalizedFallback;
       return next;
     });
   }, []);
